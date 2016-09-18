@@ -17,8 +17,7 @@ var userSchema = mongoose.Schema({
             required: true
         },
         name         : {
-            type: String,
-            required: true
+            type: String
         },
         verified     : Boolean,
         resetPasswordToken: String,

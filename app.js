@@ -7,18 +7,19 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var session  = require('express-session');
-
+var flash    = require('connect-flash');
 
 
 var app = express();
 
-/*var configDB = require('./config/database.js');
+var configDB = require('./config/database.js');
 mongoose.connect(configDB.url, function(err) {
     if (err) {
       console.log("Can't connect to DB!");
       throw err;
     }
-});*/
+    console.log('Connected to DB');
+});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -38,6 +39,7 @@ app.use(session({
   }));
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(flash()); // use connect-flash for flash messages stored in session
 
 require('./config/passport')(passport);
 require('./routes/routes.js')(app, passport);
