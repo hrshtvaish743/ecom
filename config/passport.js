@@ -39,9 +39,8 @@ module.exports = function(passport) {
             passReqToCallback: true // allows us to pass back the entire request to the callback
         },
         function(req, email, password, done) {
-          console.log('here1');
 
-            // find a user whose RepRegno is the same as the forms
+            // find a user whose email is the same as the forms
             // we are checking to see if the user trying to login already exists
             User.findOne({
                 'local.email': email
@@ -50,16 +49,18 @@ module.exports = function(passport) {
                 if (err) {
                     return done(err);
                 }
-                // check to see if theres already a user with that RepRegno
+                // check to see if theres already a user with that email
                 if (user) {
                     return done(null, false, req.flash('signupMessage', 'This email is already taken!'));
                 } else {
-                    // if there is no user with that RepRegno
+                    // if there is no user with that email
                     // create the user
                     var newUser = new User();
-                    // set the user's local credentials
+                    // set the user's local credentialsc
                     newUser.local.password = newUser.generateHash(password); // use the generateHash function in our user model
                     newUser.local.email = email;
+                    newUser.local.role = 'customer';
+                    newUser.local.name = req.param('name');
                     // save the user
                     newUser.save(function(err) {
                       console.log('Saving user');
@@ -110,4 +111,41 @@ module.exports = function(passport) {
             });
 
         }));
+
+        passport.use('admin-login', new LocalStrategy({
+                // by default, local strategy uses username and password, we will override with email
+                usernameField: 'email',
+                passwordField: 'password',
+                passReqToCallback: true // allows us to pass in the req from our route (lets us check if a user is logged in or not)
+            },
+            function(req, email, password, done) {
+                if (email)
+                    email = email.toLowerCase(); // Use lower-case e-mails to avoid case-sensitive e-mail matching
+
+                // asynchronous
+                process.nextTick(function() {
+                    User.findOne({
+                        'local.email': email
+                    }, function(err, user) {
+                        // if there are any errors, return the error
+                        if (err)
+                            return done(err);
+
+                        // if no user is found, return the message
+                        if (!user)
+                            return done(null, false, req.flash('AdminloginMessage', 'No user found.'));
+                        if(user.local.role != 'admin')
+                            return done(null, false, req.flash('AdminloginMessage', 'You are not the admin of the application'));
+
+                        if (!user.validPassword(password))
+                            return done(null, false, req.flash('AdminloginMessage', 'Oops! Wrong password.'));
+
+                        // all is well, return user
+                        else
+                            return done(null, user, req.flash('AdminloginMessage', 'Successfully Logged in!!'));
+                    });
+                });
+
+            }));
+
 };
