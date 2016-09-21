@@ -1,4 +1,6 @@
 var User = require('../models/user');
+var Role = require('../models/role')
+
 var jwt = require('jsonwebtoken');
 var config = require('../config/config.js');
 var expressJwt = require('express-jwt');
@@ -99,30 +101,101 @@ module.exports = function(app, passport) {
                         }
                     });
                 } else if (req.params.param2 == 'delete') {
-                  User.findOneAndRemove({'local.email' : req.body.email}, function(err, user) {
-                    if(err) throw err;
-                    if(!user) res.json({
-                      status : 404,
-                      message : 'User Not Found!'
+                    User.findOneAndRemove({
+                        'local.email': req.body.email
+                    }, function(err, user) {
+                        if (err) throw err;
+                        if (!user) res.json({
+                            status: 404,
+                            message: 'User Not Found!'
+                        });
+                        else {
+                            res.json({
+                                status: 1,
+                                message: 'User Deleted!'
+                            });
+                        }
                     });
-                    else {
+                }
+            } else if(req.params.param1 == 'roles') {
+              if(req.params.param2 == 'add') {
+                Role.findOne({'role' : req.body.role}, function(err, role) {
+                  if(err) throw err;
+                  if(role) res.json({
+                    status : 0,
+                    message : 'Role already exist!'
+                  });
+                  else {
+                    newRole = new Role();
+                    newRole.role = req.body.role;
+                    newRole.save(function(err) {
+                      if(err) throw err;
+                      console.log('Saving Role');
                       res.json({
                         status : 1,
-                        message : 'User Deleted!'
+                        message : 'Role added Successfully!'
                       });
-                    }
+                    });
+                  }
+                });
+              } else if(req.params.param2 == 'delete') {
+                Role.findOneAndRemove({'role' : req.body.role}, function(err, role) {
+                  if(err) throw err;
+                  if(!role) res.json({
+                    status : 404,
+                    message : 'Role not found!'
+                  });
+                  else res.json({
+                    status : 1,
+                    message : 'Role deleted!'
+                  });
+                });
+              } else if(req.params.param2 == 'update') {
+                Role.findOne({'role' : req.body.role}, function(err, role) {
+                  if(err) throw err;
+                  if(!role) res.json({
+                    status : 404,
+                    message : 'Role not found'
+                  });
+                  else {
+                    role.role = req.body.newRole;
+                    role.save(function (err) {
+                      if (err) throw err;
+                      res.json({
+                        status: 1,
+                        message : 'Role updated'
+                      });
+                    });
+                  }
+                });
+              } else if(req.params.param2 == ''){}
+            } else if(req.params.param1 == 'functions');
+        } else if(decoded.role != 'admin'){
+            if(req.params.param1 == 'user' && req.params.param2 == 'update') {
+              User.findOne({'local.email' : req.body.email}, function(err, user) {
+                if (err) throw err;
+                if(!user) res.json({
+                  status :404,
+                  message : 'User not found'
+                });
+                else {
+                  user.local.name = req.body.newName;
+                  //user.local.email = req.body.newEmail;
+
+                  user.save(function(err) {
+                    if(err) throw err;
+                    res.json({
+                      status : 1,
+                      message : 'Profile updated'
+                    });
                   });
                 }
+              });
             }
-        } else res.json('Not a verified user!');
-
+        }
+        else res.json('Not a verified user!');
     });
 
-    // LOGOUT =============================
-    app.get('/logout', function(req, res) {
-        req.logout();
-        res.json('Logged Out');
-    });
 
 }
 
@@ -141,24 +214,4 @@ function respond(req, res) {
         user: req.user,
         token: req.token
     });
-}
-
-// route middleware to ensure user is logged in
-function isCustomerLoggedIn(req, res, next) {
-    if (req.isAuthenticated() && req.user.local.role == 'customer')
-        return next();
-    res.json('Not Logged In!');
-}
-
-function isSalesRepLoggedIn(req, res, next) {
-    if (req.isAuthenticated() && req.user.local.role == 'sales-rep')
-        return next();
-    res.json('Not Logged In!');
-}
-
-// route middleware to ensure admin is logged in
-function isAdminLoggedIn(req, res, next) {
-    if (req.isAuthenticated() && req.user.local.role == 'admin')
-        return next();
-    res.json('Not Logged In!');
 }
