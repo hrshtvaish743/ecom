@@ -4,7 +4,7 @@ var LocalStrategy = require('passport-local').Strategy;
 
 // load up the user model
 var User = require('../models/user');
-var nodemailer = require('nodemailer');
+var Config = require('../models/config');
 
 // expose this function to our app using module.exports
 module.exports = function(passport) {
@@ -53,6 +53,12 @@ module.exports = function(passport) {
                 if (user) {
                     return done(null, false, req.flash('signupMessage', 'This email is already taken!'));
                 } else {
+                    var user_id;
+                    Config.findOne({'config' : 'normal'}, function(err, config) {
+                      if(err) throw err;
+                      user_id = config.incrementUserCount();
+                      config.user_count = user_id;
+
                     // if there is no user with that email
                     // create the user
                     var newUser = new User();
@@ -61,12 +67,17 @@ module.exports = function(passport) {
                     newUser.local.email = email;
                     newUser.local.role = 'customer';
                     newUser.local.name = req.param('name');
+                    newUser.user_id = user_id;
                     // save the user
                     newUser.save(function(err) {
-                      console.log('Saving user');
                         if (err)
                             throw err;
+                        config.save(function(err) {
+                          if(err) throw err;
+                        });
+                        console.log('Saving user');
                         return done(null, newUser, req.flash('signupMessage', 'Successfully Signed up!'));
+                    });
                     });
                 }
             });

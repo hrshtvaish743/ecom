@@ -1,6 +1,9 @@
 var User = require('../models/user');
-var Role = require('../models/role')
-var Funct = require('../models/function')
+var Role = require('../models/role');
+var Funct = require('../models/function');
+var Order = require('../models/order');
+var Config = require('../models/config');
+var Functions = require('../functions/functions');
 
 var jwt = require('jsonwebtoken');
 var config = require('../config/config.js');
@@ -9,6 +12,7 @@ var authenticate = expressJwt({
     secret: config.Secret
 });
 var jwt_decode = require('jwt-decode');
+var async = require('async');
 
 
 module.exports = function(app, passport) {
@@ -17,6 +21,17 @@ module.exports = function(app, passport) {
     app.get('/', function(req, res) {
         res.json('Hello Windswept!');
     });
+
+    // SIGNUP =================================
+    app.get('/signup', function(req, res) {
+        res.json(req.flash('signupMessage'));
+    });
+
+    app.post('/signup', passport.authenticate('local-signup', {
+        failureRedirect: '/signup',
+        failureFlash: true,
+        session: false
+    }), generateToken, respond);
 
     // LOGIN =================================
 
@@ -30,16 +45,7 @@ module.exports = function(app, passport) {
         session: false
     }), generateToken, respond);
 
-    // SIGNUP =================================
-    app.get('/signup', function(req, res) {
-        res.json(req.flash('signupMessage'));
-    });
 
-    app.post('/signup', passport.authenticate('local-signup', {
-        failureRedirect: '/signup',
-        failureFlash: true,
-        session: false
-    }), generateToken, respond);
 
 
     app.get('/admin/login', function(req, res) {
@@ -56,7 +62,6 @@ module.exports = function(app, passport) {
 
     app.post('/:param1/:param2', authenticate, function(req, res) {
         var decoded = jwt_decode(req.headers.authorization);
-
         // *** User routes ***
         if (req.params.param1 == 'user') {
             //*** Creating user by admin ***
@@ -71,20 +76,32 @@ module.exports = function(app, passport) {
                             message: 'User with that email already exist'
                         });
                     else {
-                        newUser = new User();
-                        newUser.local.email = req.body.email;
-                        newUser.local.name = req.body.name;
-                        newUser.local.password = newUser.generateHash(req.body.password);
-                        newUser.local.role = req.body.role;
-                        newUser.save(function(err) {
-                            console.log('Saving user');
-                            if (err)
-                                throw err;
+                        Config.findOne({
+                            'config': 'normal'
+                        }, function(err, config) {
+                            if (err) throw err;
+                            var user_id = config.incrementUserCount();
+                            config.user_count = user_id;
+                            newUser = new User();
+                            newUser.local.email = req.body.email;
+                            newUser.local.name = req.body.name;
+                            newUser.local.password = newUser.generateHash(req.body.password);
+                            newUser.local.role = req.body.role;
+                            newUser.user_id = user_id;
+                            newUser.save(function(err) {
+
+                                if (err)
+                                    throw err;
+                                config.save(function(err) {
+                                    if (err) throw err;
+                                });
+                                console.log('Saving user');
+                                res.json({
+                                    status: 1,
+                                    message: 'User created Successfully.'
+                                });
+                            });
                         });
-                        res.json({
-                            status: 1,
-                            message: 'User created Successfully.'
-                        })
                     }
                 });
             }
@@ -100,9 +117,19 @@ module.exports = function(app, passport) {
                         message: 'User Not Found!'
                     });
                     else {
-                        res.json({
-                            status: 1,
-                            message: 'User Deleted!'
+                        Config.findOne({
+                            'config': 'normal'
+                        }, function(err, config) {
+                            if (err) throw err;
+                            var count = config.decrementUserCount();
+                            config.user_count = count;
+                            config.save(function(err) {
+                                if (err) throw err;
+                                res.json({
+                                    status: 1,
+                                    message: 'User Deleted!'
+                                });
+                            });
                         });
                     }
                 });
@@ -133,8 +160,8 @@ module.exports = function(app, passport) {
                     }
                 });
             } else res.status(404).json({
-              status : 404,
-              message : 'Not found'
+                status: 404,
+                message: 'Not found'
             });
         }
         //*** User Routes over ****
@@ -152,14 +179,25 @@ module.exports = function(app, passport) {
                         message: 'Role already exist!'
                     });
                     else {
-                        newRole = new Role();
-                        newRole.role = req.body.role;
-                        newRole.save(function(err) {
-                            if (err) throw err;
-                            console.log('Saving Role');
-                            res.json({
-                                status: 1,
-                                message: 'Role added Successfully!'
+                        Config.findOne({
+                            'config': 'normal'
+                        }, function(err, config) {
+                            var role_id = config.incrementRoleCount();
+                            config.role_count = role_id;
+
+                            newRole = new Role();
+                            newRole.role = req.body.role;
+                            newRole.role_id = role_id;
+                            newRole.save(function(err) {
+                                if (err) throw err;
+                                config.save(function(err) {
+                                    if (err) throw err;
+                                });
+                                console.log('Saving Role');
+                                res.json({
+                                    status: 1,
+                                    message: 'Role added Successfully!'
+                                });
                             });
                         });
                     }
@@ -175,10 +213,21 @@ module.exports = function(app, passport) {
                         status: 404,
                         message: 'Role not found!'
                     });
-                    else res.json({
-                        status: 1,
-                        message: 'Role deleted!'
-                    });
+                    else {
+                        Config.findOne({
+                            'config': 'normal'
+                        }, function(err, config) {
+                            var count = config.decrementRoleCount();
+                            config.role_count = count;
+                            config.save(function(err) {
+                                if (err) throw err;
+                                res.json({
+                                    status: 1,
+                                    message: 'Role deleted!'
+                                });
+                            });
+                        });
+                    }
                 });
             }
             //*** Updation of a role by admin
@@ -203,8 +252,8 @@ module.exports = function(app, passport) {
                     }
                 });
             } else res.status(404).json({
-              status : 404,
-              message : 'Not Found'
+                status: 404,
+                message: 'Not Found'
             });
         }
 
@@ -236,8 +285,8 @@ module.exports = function(app, passport) {
                             if (err) throw err;
                             res.json({
                                 status: 1,
-                                message : 'Roles added to the function',
-                                newRoles : roles
+                                message: 'Roles added to the function',
+                                newRoles: roles
                             });
                         });
                     }
@@ -247,72 +296,119 @@ module.exports = function(app, passport) {
                     'functionName': req.body.functionName
                 }, function(err, funct) {
                     if (!funct) {
+                      Config.findOne({'config' : 'normal'}, function(err,config) {
+                        if(err) throw err;
+                        var function_id = config.function_count + 1;
+                        config.function_count = function_id;
                         newFunct = new Funct();
                         newFunct.functionName = req.body.functionName;
+                        newFunct.function_id = function_id;
+                        newFunct.functionRoute = req.body.functionRoute;
                         newFunct.save(function(err) {
+                            config.save();
                             res.json({
                                 status: 1,
-                                message: 'Function added'
+                                message: 'Function added',
+                                funct : newFunct
                             });
+                        });
                         });
                     }
                 });
             } else res.status(404).json({
-              status : 404,
-              message : 'Not found'
+                status: 404,
+                message: 'Not found'
             });
+        } else if (req.params.param1 == 'orders') {
+            if (req.params.param2 == 'create') {
+              Funct.findOne({'functionName' : 'CreateOrder'}, function(err, func) {
+                if(err) throw err;
+                if(func.roles.indexOf(decoded.role !== -1)) {
+                  Functions.CreateOrder(req, decoded.id, function(order_id) {
+                      res.json({
+                          status: 1,
+                          order_id: order_id
+                      });
+                  });
+                }
+              })
+
+            } else if (req.params.param2 == 'all') {
+                Funct.findOne({'functionName' : 'GetOrders'}, function(err, func) {
+                  if(err) throw err;
+                  if(func.roles.indexOf(decoded.role) !== -1){
+                  Functions.ShowOrder(req,res,decoded.id, function(orders) {
+                    res.json({
+                      status : 1,
+                      orders : orders
+                    });
+                  });
+                } else res.json({
+                  status : 0,
+                  message : 'Not Authenticated'
+                });
+                });
+
+            } else if (req.params.param2 == 'delete') {
+                Functions.DeleteOrder(req,res,decoded.id, function(order) {
+                  res.json({
+                    status : 1,
+                    order : order
+                  });
+                });
+            }
         } else res.status(404).json({
-          status : 404,
-          message : 'Not found!'
+            status: 404,
+            message: 'Not found!'
         });
     });
 
     app.get('/:param1/:param2?', authenticate, function(req, res) {
-      var decoded = jwt_decode(req.headers.authorization);
-      if(req.params.param1 == 'functions' && req.params.param2) {
-        Funct.findOne({
-          'functionName' : req.params.param2
-        }, function(err, funct) {
-          if(err) throw err;
-          if(!funct) {
-            res.json({
-              status : 0,
-              message : 'Function not found'
+        var decoded = jwt_decode(req.headers.authorization);
+        if (req.params.param1 == 'functions' && req.params.param2) {
+            Funct.findOne({
+                'functionName': req.params.param2
+            }, function(err, funct) {
+                if (err) throw err;
+                if (!funct) {
+                    res.json({
+                        status: 0,
+                        message: 'Function not found'
+                    });
+                } else {
+                    if (funct.roles.indexOf(decoded.role) !== -1) {
+                        res.json({
+                            status: 1,
+                            message: 'You can access this function'
+                        });
+                    } else {
+                        res.json({
+                            status: 0,
+                            message: 'You cannot access this function'
+                        });
+                    }
+                }
             });
-          } else {
-            if(funct.roles.indexOf(decoded.role) !== -1) {
-              res.json({
-                status : 1,
-                message : 'You can access this function'
-              });
-            } else {
-              res.json({
-                status : 0,
-                message : 'You cannot access this function'
-              });
+        } else if (req.params.param1 == 'functions' && !req.params.param2) { //to get list of all the functions
+            if (decoded.role == 'admin') {
+                Funct.find({}, function(err, funct) {
+                    if (err) throw err;
+                    if (!funct) {
+                        res.json({
+                            status: 0,
+                            message: 'No function found'
+                        });
+                    } else {
+                        res.json({
+                            status: 1,
+                            functions: funct
+                        });
+                    }
+                });
             }
-          }
+        } else res.json({
+            status: 0
         });
-      } else if(req.params.param1 == 'functions' && !req.params.param2) { //to get list of all the functions
-          if(decoded.role == 'admin') {
-            Funct.find({}, function(err, funct) {
-              if (err) throw err;
-              if(!funct) {
-                res.json({
-                  status : 0,
-                  message : 'No function found'
-                });
-              } else {
-                res.json({
-                  status : 1,
-                  functions : funct
-                });
-              }
-            });
-          }
-      } else res.json({
-        status : 0
-      });
     });
 }
 
@@ -320,12 +416,14 @@ module.exports = function(app, passport) {
 function generateToken(req, res, next) {
     req.token = jwt.sign({
         id: req.user.id,
-        role: req.user.local.role
+        role: req.user.local.role,
+        user_id : req.user.user_id
     }, config.Secret, {
         expiresIn: 120 * 60
     });
     next();
 }
+
 
 //function to respond after generation on token
 function respond(req, res) {
