@@ -67,19 +67,17 @@ if (app.get('env') === 'development') {
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-    if (err.message == 'jwt expired') {
+    if (err.status == 401) {
         res.status(401).json({
             status: 10,
-            message: 'Token Expired'
-        });
-    } else if (err.message == 'invalid algorithm') {
-        res.status(err.status).json({
-            status: 20,
-            message: 'Invalid Token'
+            message: err.message
         });
     } else {
         res.status(err.status || 500);
-        res.json('ERROR : Internal Server Error');
+        res.json({
+          status : 500,
+          message : 'ERROR : Internal Server Error'
+        });
     }
 });
 
