@@ -19,12 +19,22 @@ module.exports = function(app, passport) {
 
     // INDEX ===========================
     app.get('/', function(req, res) {
-        res.json('Hello Windswept!');
+        res.json({
+          status : 1,
+          message : 'Hello User'
+        });
     });
 
     // SIGNUP =================================
     app.get('/signup', function(req, res) {
-        res.json(req.flash('signupMessage'));
+      if(req.flash('signupMessage').length > 0) {
+        res.json({
+          status : 0,
+          message : req.flash('signupMessage')
+        });
+      } else {
+        res.redirect('/');
+      }
     });
 
     app.post('/signup', passport.authenticate('local-signup', {
@@ -36,7 +46,14 @@ module.exports = function(app, passport) {
     // LOGIN =================================
 
     app.get('/login', function(req, res) {
-        res.json(req.flash('loginMessage'));
+      if(req.flash('loginMessage').length > 0) {
+        res.json({
+          status : 0,
+          message : req.flash('loginMessage')
+        });
+      } else {
+        res.redirect('/');
+      }
     });
 
     app.post('/login', passport.authenticate('local-login', {
@@ -81,7 +98,6 @@ module.exports = function(app, passport) {
                         }, function(err, config) {
                             if (err) throw err;
                             var user_id = config.incrementUserCount();
-                            config.user_count = user_id;
                             newUser = new User();
                             newUser.local.email = req.body.email;
                             newUser.local.name = req.body.name;
@@ -122,7 +138,6 @@ module.exports = function(app, passport) {
                         }, function(err, config) {
                             if (err) throw err;
                             var count = config.decrementUserCount();
-                            config.user_count = count;
                             config.save(function(err) {
                                 if (err) throw err;
                                 res.json({
@@ -183,8 +198,6 @@ module.exports = function(app, passport) {
                             'config': 'normal'
                         }, function(err, config) {
                             var role_id = config.incrementRoleCount();
-                            config.role_count = role_id;
-
                             newRole = new Role();
                             newRole.role = req.body.role;
                             newRole.role_id = role_id;
@@ -218,7 +231,6 @@ module.exports = function(app, passport) {
                             'config': 'normal'
                         }, function(err, config) {
                             var count = config.decrementRoleCount();
-                            config.role_count = count;
                             config.save(function(err) {
                                 if (err) throw err;
                                 res.json({
@@ -270,12 +282,10 @@ module.exports = function(app, passport) {
                         message: 'Function not found!'
                     });
                     else {
-                        console.log(req.body.roles);
                         var roles;
                         if (!funct.roles) {
                             roles = [];
                         } else roles = funct.roles;
-                        console.log(roles);
                         for (var i = 0; i < req.body.roles.length; i++) {
                             roles.push(req.body.roles[i]);
                         }
@@ -337,7 +347,7 @@ module.exports = function(app, passport) {
                 Funct.findOne({'functionName' : 'GetOrders'}, function(err, func) {
                   if(err) throw err;
                   if(func.roles.indexOf(decoded.role) !== -1){
-                  Functions.ShowOrder(req,res,decoded.id, function(orders) {
+                  Functions.GetOrders(req,res,decoded.id, function(orders) {
                     res.json({
                       status : 1,
                       orders : orders
@@ -349,8 +359,8 @@ module.exports = function(app, passport) {
                 });
                 });
 
-            } else if (req.params.param2 == 'delete') {
-                Functions.DeleteOrder(req,res,decoded.id, function(order) {
+            } else if (req.params.param2 == 'cancel') {
+                Functions.CancelOrder(req,res,decoded.id, function(order) {
                   res.json({
                     status : 1,
                     order : order
@@ -428,6 +438,7 @@ function generateToken(req, res, next) {
 //function to respond after generation on token
 function respond(req, res) {
     res.status(200).json({
+        status : 1,
         user: req.user,
         token: req.token
     });

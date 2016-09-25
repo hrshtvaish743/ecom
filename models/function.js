@@ -8,12 +8,8 @@ var functionSchema = mongoose.Schema({
     },
     functionName: {
       type : String,
-      required : true
-    },
-    functionRoute : {
-      type : String,
-      unique : true,
-      required : true
+      required : true,
+      unique : true
     },
     roles: [String]
 });

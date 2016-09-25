@@ -8,13 +8,14 @@ var mongoose = require('mongoose');
 var passport = require('passport');
 var session = require('express-session');
 var flash = require('connect-flash');
-var jwt    = require('jsonwebtoken');
+var jwt = require('jsonwebtoken');
 
 
 var app = express();
 
 var config = require('./config/config.js');
-mongoose.connect(config .url, function(err) {
+mongoose.Promise = global.Promise;
+mongoose.connect(config.url, function(err) {
     if (err) {
         console.log("Can't connect to DB!");
         throw err;
@@ -46,7 +47,7 @@ require('./config/passport')(passport);
 require('./routes/routes.js')(app, passport);
 
 // catch 404 and forward to error handler
-/*app.use(function(req, res, next) {
+app.use(function(req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
     next(err);
@@ -59,16 +60,28 @@ require('./routes/routes.js')(app, passport);
 if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
         res.status(err.status || 500);
-        res.json('ERROR : Internal Server Error');
+        res.json(err);
     });
 }
 
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.json('ERROR : Internal Server Error');
-});*/
+    if (err.message == 'jwt expired') {
+        res.status(401).json({
+            status: 10,
+            message: 'Token Expired'
+        });
+    } else if (err.message == 'invalid algorithm') {
+        res.status(err.status).json({
+            status: 20,
+            message: 'Invalid Token'
+        });
+    } else {
+        res.status(err.status || 500);
+        res.json('ERROR : Internal Server Error');
+    }
+});
 
 
 module.exports = app;

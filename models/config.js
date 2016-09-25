@@ -17,22 +17,25 @@ var configSchema = mongoose.Schema({
 });
 
 configSchema.methods.incrementOrderCount = function() {
-    return this.order_count + 1;
+    this.order_count = this.order_count + 1;
+    return this.order_count;
 };
 configSchema.methods.incrementRoleCount = function() {
-    return this.role_count + 1;
+    this.role_count = this.role_count + 1;
+    return this.role_count;
 };
 configSchema.methods.incrementUserCount = function() {
-    console.log(this.user_count);
-    return this.user_count + 1;
+    this.user_count = this.user_count + 1
+    return this.user_count;
 };
 
 configSchema.methods.decrementRoleCount = function() {
-    return this.role_count - 1;
+    this.role_count = this.role_count - 1;
+    return this.role_count;
 };
 configSchema.methods.decrementUserCount = function() {
-    console.log(this.user_count);
-    return this.user_count - 1;
+    this.user_count = this.user_count - 1;
+    return this.user_count;
 };
 
 module.exports = mongoose.model('config', configSchema);
