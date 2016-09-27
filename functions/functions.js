@@ -5,12 +5,12 @@ var Role = require('../models/role');
 var Funct = require('../models/function');
 
 module.exports = {
-  
+
     //====================================
     //======= Creation of an order =======
     //====================================
     CreateOrder: function(req, res, id) {
-        User.findById(id, function(err, user) {
+        User.findOne({'local.user_id' : id }, function(err, user) {
             if (err) throw err;
             Config.findOne({
                 'config': 'normal'
@@ -40,7 +40,7 @@ module.exports = {
     //======= Get all orders by the respective user =======
     //=====================================================
     GetOrders: function(req, res, id) {
-        User.findById(id, function(err, user) {
+        User.findOne({'local.user_id' : id }, function(err, user) {
             if (err) throw err;
             Order.find({
                 'ordered_by': user.user_id
@@ -67,7 +67,7 @@ module.exports = {
     //================================================
 
     CancelOrder: function(req, res, id) {
-        User.findById(id, function(err, user) {
+        User.findOne({'local.user_id' : id }, function(err, user) {
             if (err) throw err;
             Order.findOne({
                 'ordered_by': user.user_id,
@@ -108,7 +108,7 @@ module.exports = {
     //=======================================================================
 
     GetCancelledOrders: function(req, res, id) {
-        User.findById(id, function(err, user) {
+        User.findOne({'local.user_id' : id }, function(err, user) {
             if (err) throw err;
             Order.find({
                 'ordered_by': user.user_id,
@@ -185,7 +185,7 @@ module.exports = {
     //======= Gettig list of all orders ever placed =======
     //=====================================================
 
-    GetAllOrders: function(req, res, id) {
+    GetAllOrders: function(req, res) {
         Orders.find({}, function(err, orders) {
             if (err) throw err;
             if (!orders) res.json({
@@ -252,6 +252,7 @@ module.exports = {
     //=========================================
     //======= Update Profile ==================
     //=========================================
+    //====== Only Admin can change role =======
 
     UpdateProfile: function(req, res, role) {
         User.findOne({

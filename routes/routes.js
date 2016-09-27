@@ -217,7 +217,7 @@ module.exports = function(app, passport) {
                     if (err) throw err;
                     if (!func) failureResponse(req, res, 'Function Not Added');
                     if (func.roles.indexOf(decoded.role !== -1)) {
-                        Functions.CreateOrder(req, res, decoded.id);
+                        Functions.CreateOrder(req, res, decoded.role);
                     } else {
                         failureResponse(req, res, 'Not Authenticated');
                     }
@@ -230,7 +230,7 @@ module.exports = function(app, passport) {
                     if (err) throw err;
                     if (!func) failureResponse(req, res, 'Function Not Added');
                     if (func.roles.indexOf(decoded.role) !== -1) {
-                        Functions.GetOrders(req, res, decoded.id);
+                        Functions.GetOrders(req, res, decoded.role);
                     } else {
                         failureResponse(req, res, 'Not Authenticated');
                     }
@@ -243,7 +243,7 @@ module.exports = function(app, passport) {
                     if (err) throw err;
                     if (!func) failureResponse(req, res, 'Function Not Added');
                     if (func.roles.indexOf(decoded.role) !== -1) {
-                        Functions.CancelOrder(req, res, decoded.id);
+                        Functions.CancelOrder(req, res, decoded.role);
                     } else {
                         failureResponse(req, res, 'Not Authenticated');
                     }
@@ -255,7 +255,7 @@ module.exports = function(app, passport) {
                     if (err) throw err;
                     if (!func) failureResponse(req, res, 'Function Not Added');
                     if (func.roles.indexOf(decoded.role) !== -1) {
-                        Functions.GetCancelledOrders(req, res, decoded.id);
+                        Functions.GetCancelledOrders(req, res, decoded.role);
                     } else {
                         failureResponse(req, res, 'Not Authenticated');
                     }
