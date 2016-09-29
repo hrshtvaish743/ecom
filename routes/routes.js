@@ -66,7 +66,7 @@ module.exports = function(app, passport) {
     app.post('/:param1/:param2', authenticate, refreshToken, function(req, res) {
         var decoded = jwt_decode(req.headers.authorization);
         if (req.params.param1 == 'user') {
-            if (req.params.param2 == 'create') { //*** Creating user by admin ***
+            if (req.params.param2 == 'create') { //Creating an user
                 Funct.findOne({
                     'functionName': 'CreateUser'
                 }, function(err, func) {
@@ -80,7 +80,7 @@ module.exports = function(app, passport) {
                         }
                     }
                 });
-            } else if (req.params.param2 == 'delete') { //** Deleting a user by admin
+            } else if (req.params.param2 == 'delete') { //Deleting a user
                 Funct.findOne({
                     'functionName': 'DeleteUser'
                 }, function(err, func) {
@@ -143,7 +143,7 @@ module.exports = function(app, passport) {
                         }
                     }
                 });
-            } else if (req.params.param2 == 'update') { //*** Updation of a role by admin
+            } else if (req.params.param2 == 'update') { //Updation of a role by admin
                 Funct.findOne({
                     'functionName': 'UpdateRole'
                 }, function(err, func) {
@@ -161,7 +161,7 @@ module.exports = function(app, passport) {
                 status: 404,
                 message: 'Not Found'
             });
-        } else if (req.params.param1 == 'functions') { //**** Functions routes ***
+        } else if (req.params.param1 == 'functions') { //**** Function routes ***
             if (req.params.param2 == 'roles') { //To add allowed roles for each function
                 Funct.findOne({
                     'functionName': 'AssignRoles'
@@ -210,7 +210,7 @@ module.exports = function(app, passport) {
                 });
             }
         } else if (req.params.param1 == 'orders') { //Routes for managing orders
-            if (req.params.param2 == 'create') {
+            if (req.params.param2 == 'create') {      //Creating an order
                 Funct.findOne({
                     'functionName': 'CreateOrder'
                 }, function(err, func) {
@@ -221,9 +221,8 @@ module.exports = function(app, passport) {
                     } else {
                         failureResponse(req, res, 'Not Authenticated');
                     }
-                })
-
-            } else if (req.params.param2 == 'all') {
+                });
+            } else if (req.params.param2 == 'all') {      //Getting list of orders by the respective user
                 Funct.findOne({
                     'functionName': 'GetOrders'
                 }, function(err, func) {
@@ -235,8 +234,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-
-            } else if (req.params.param2 == 'cancel') {
+            } else if (req.params.param2 == 'cancel') {       //To cancel an order
                 Funct.findOne({
                     'functionName': 'CancelOrder'
                 }, function(err, func) {
@@ -248,7 +246,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-            } else if (req.params.param2 == 'cancelled') {
+            } else if (req.params.param2 == 'cancelled') {        //Getting list of cancelled orders
                 Funct.findOne({
                     'functionName': 'GetCancelledOrders'
                 }, function(err, func) {
@@ -260,7 +258,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-            } else if (req.params.param2 == 'createforuser') {
+            } else if (req.params.param2 == 'createforuser') {      //Creating an order for a user
                 Funct.findOne({
                     'functionName': 'CreateOrderForUser'
                 }, function(err, func) {
@@ -272,7 +270,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-            } else if (req.params.param2 == 'allorders') {
+            } else if (req.params.param2 == 'allorders') {        //Getting list of all orders
                 Funct.findOne({
                     'functionName': 'GetAllOrders'
                 }, function(err, func) {
@@ -284,7 +282,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-            } else if (req.params.param2 == 'cancelforuser') {
+            } else if (req.params.param2 == 'cancelforuser') {        // Cancelling order for a user
                 Funct.findOne({
                     'functionName': 'CancelOrderForUser'
                 }, function(err, func) {
@@ -296,7 +294,7 @@ module.exports = function(app, passport) {
                         failureResponse(req, res, 'Not Authenticated');
                     }
                 });
-            } else {
+            } else {          //Getting list of orders per user
                 Funct.findOne({
                     'functionName': 'GetOrdersPerUser'
                 }, function(err, func) {
